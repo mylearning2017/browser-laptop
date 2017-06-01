@@ -222,6 +222,27 @@ if (processType === 'browser') {
       dispatchEventPayload(event, payload[i])
     }
   })
+} else if (processType === 'renderer') {
+  const dispatchEventPayload = (e, payload) => {
+    let queryInfo = payload.queryInfo || payload.frameProps || {}
+    queryInfo = queryInfo.toJS ? queryInfo.toJS() : queryInfo
+    if (queryInfo.windowId === -2 && currentWindow.isFocused()) {
+      queryInfo.windowId = currentWindow.getCurrentWindowId()
+    }
+    // handle any ipc dispatches that are targeted to this window
+    if (queryInfo.windowId && queryInfo.windowId === currentWindow.getCurrentWindowId() && !queryInfo.alreadyHandledByRenderer) {
+      delete payload.queryInfo
+      appDispatcher.dispatch(payload)
+    }
+  }
+
+  // Allows the parent process to dispatch window actions
+  ipc.on(messages.DISPATCH_ACTION, (e, serializedPayload) => {
+    let payload = Serializer.deserialize(serializedPayload)
+    for (var i = 0; i < payload.length; i++) {
+      dispatchEventPayload(e, payload[i])
+    }
+  })
 }
 
 module.exports = appDispatcher
