@@ -377,7 +377,7 @@ function removeFrame (state, frameProps, framePropsIndex) {
   let closedFrames = state.get('closedFrames')
   const newFrames = frames.splice(framePropsIndex, 1)
 
-  if (!frameProps.get('isPrivate') && frameProps.get('location') !== 'about:newtab') {
+  if (isValidClosedFrame(frameProps)) {
     frameProps = frameProps.set('isFullScreen', false)
     closedFrames = closedFrames.push(frameProps)
     if (frameProps.get('thumbnailBlob')) {
@@ -484,6 +484,14 @@ const updateFramesInternalIndex = (state, fromIndex) => {
   return state.set('framesInternal', framesInternal)
 }
 
+const isValidClosedFrame = (frame) => {
+  const location = frame.get('location')
+  if (location && (location.indexOf('about:newtab') !== -1 || location.indexOf('about:blank') !== -1)) {
+    return false
+  }
+  return !frame.get('isPrivate')
+}
+
 module.exports = {
   deleteTabInternalIndex,
   deleteFrameInternalIndex,
@@ -530,5 +538,6 @@ module.exports = {
   activeFrameStatePath,
   getLastCommittedURL,
   onFindBarHide,
-  getTotalBlocks
+  getTotalBlocks,
+  isValidClosedFrame
 }
